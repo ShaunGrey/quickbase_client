@@ -106,12 +106,15 @@ class Client
          setHTTPConnectionAndqbhost( useSSL, org, domain, proxy_options )         
          debugHTTPConnection() if debugHTTPConnection
          @standardRequestHeaders = { "Content-Type" => "application/xml" }
+		 if username and password
+			authenticate( username, password )
             if appname and @errcode == "0"
                findDBByname( appname )
                if @dbid and @errcode == "0"
                  getDBInfo( @dbid )
                  getSchema( @dbid )
                end
+			end
          end
       rescue Net::HTTPBadRequest => @lastError
       rescue Net::HTTPBadResponse => @lastError
@@ -299,10 +302,17 @@ class Client
    end
 
    # Returns the request XML for either a ticket or a username and password. 
-   # The XML includes a apptoken if one has been set. 
+   # The XML includes a apptoken if one has been set.
    def getAuthenticationXMLforRequest( api_Request )
       @authenticationXML = ""
-      @authenticationXML = toXML( :usertoken, @usertoken )
+	  if @ticket
+		 @authenticationXML = toXML( :ticket, @ticket )
+	  elsif @username and @password
+	     @authenticationXML = toXML( :username, @username ) + toXML( :password, @password )
+	  elsif @usertoken
+	     @authenticationXML = toXML( :usertoken, @usertoken )
+	  end
+	  @authenticationXML << toXML( :apptoken, @apptoken ) if @apptoken
    end
 
    # Returns whether a request will return HTML rather than XML.
